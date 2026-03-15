@@ -8,6 +8,7 @@ import "../globals.css";
 import { Providers } from "./providers";
 
 import { locales } from '@/i18n/routing';
+import { SSOLoginHandler } from "@/components/auth/SSOLoginHandler";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -76,6 +77,7 @@ export default async function LocaleLayout({
             >
                 <NextIntlClientProvider messages={messages}>
                     <Providers>
+                        <SSOLoginHandler />
                         {children}
                     </Providers>
                 </NextIntlClientProvider>

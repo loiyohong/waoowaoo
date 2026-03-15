@@ -1,0 +1,95 @@
+services:
+  # ==================== MySQL ====================
+  mysql:
+    image: mysql:8.0
+    container_name: waoowaoo-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: waoowaoo123
+      MYSQL_DATABASE: waoowaoo
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "13306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 384M
+    command:
+      - "--default-authentication-plugin=mysql_native_password"
+      - "--sql_mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION"
+
+  # ==================== Redis ====================
+  redis:
+    image: redis:7-alpine
+    container_name: waoowaoo-redis
+    restart: unless-stopped
+    ports:
+      - "16379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  # ==================== MinIO ====================
+  minio:
+    image: minio/minio
+    container_name: waoowaoo-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  # ==================== App (Next.js + Workers) ====================
+  app:
+    image: novelbox/waoowaoo:latest
+    container_name: waoowaoo-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # 数据库（指向容器内部 MySQL，用服务名 mysql 而非 localhost）
+      DATABASE_URL: "mysql://root:waoowaoo123@mysql:3306/waoowaoo"
+      # Redis（指向容器内部 Redis，用服务名 redis）
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      # 存储类型
+      STORAGE_TYPE: minio
+      # 认证
+      NEXTAUTH_URL: "https://studio.novelboxai.com"
+      NEXTAUTH_SECRET: "waoowaoo-next-auth-secret-key-2026-v1"
+      # SSO Bridge
+      SSO_SHARED_SECRET: "novelbox-waoowaoo-shared-secret-2026-v1"
+    ports:
+      - "13000:3000"
+      - "13010:3010"
+    volumes:
+      - ./data:/app/data
+      - ./docker-logs:/app/logs
+      - ./src/app/api/sso/login/route.ts:/app/.next/server/app/api/sso/login/route.js
+    depends_on:
+      - mysql
+      - redis
+      - minio
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    command: >
+      sh -c "
+        npx prisma db push --skip-generate --accept-data-loss &&
+        npm run start
+      "
+
+volumes:
+  mysql_data:
+  redis_data:
+  minio_data:

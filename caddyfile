@@ -9,7 +9,7 @@
 # 修改下方 IP 为你的局域网 IP（ifconfig en0 查看）
 # 例如: localhost:1443, https://192.168.x.x:1443 {
 
-localhost:1443 {
+localhost:1443, studio.novelboxai.com {
     handle /admin/queues* {
         reverse_proxy localhost:13010
     }

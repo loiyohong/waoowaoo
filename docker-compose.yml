@@ -15,12 +15,6 @@ services:
     command:
       - "--default-authentication-plugin=mysql_native_password"
       - "--sql_mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION"
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -pwaoowaoo123"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-      start_period: 15s
 
   # ==================== Redis ====================
   redis:
@@ -32,12 +26,6 @@ services:
     volumes:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-      start_period: 5s
 
   # ==================== MinIO ====================
   minio:
@@ -83,10 +71,12 @@ services:
       MINIO_SECRET_KEY: "minioadmin"
       MINIO_FORCE_PATH_STYLE: "true"
       # 外部访问地址（浏览器实际访问）
-      NEXTAUTH_URL: "http://localhost:13000"
+      NEXTAUTH_URL: "https://studio.novelboxai.com"
       # 容器内自调用地址（服务端 fetch 自己的 API / 文件）
       INTERNAL_APP_URL: "http://127.0.0.1:3000"
-      NEXTAUTH_SECRET: "waoowaoo-default-secret-2026"
+      NEXTAUTH_SECRET: "waoowaoo-next-auth-secret-key-2026-v1"
+      # SSO Bridge
+      SSO_SHARED_SECRET: "novelbox-waoowaoo-shared-secret-2026-v1"
       # 内部密钥
       CRON_SECRET: "waoowaoo-docker-cron-secret"
       INTERNAL_TASK_TOKEN: "waoowaoo-docker-task-token"
@@ -122,31 +112,27 @@ services:
     volumes:
       - ./data:/app/data
       - ./docker-logs:/app/logs
+    command: npm run start
+
+  # ==================== Reverse Proxy (Caddy) ====================
+  caddy:
+    image: caddy:2-alpine
+    container_name: waoowaoo-proxy
+    restart: unless-stopped
+    ports:
+      - "1443:1443"
+      - "80:80"
+    volumes:
+      - ./Caddyfile.docker:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    command: >
-      sh -c "
-        npx prisma db push --skip-generate &&
-        (sleep 5 && echo '' &&
-        echo '╔══════════════════════════════════════════════════╗' &&
-        echo '║            waoowaoo is ready!                    ║' &&
-        echo '║                                                  ║' &&
-        echo '║  HTTP:  http://localhost:13000                    ║' &&
-        echo '║                                                  ║' &&
-        echo '║  For HTTPS, run Caddy on host:                   ║' &&
-        echo '║  caddy run --config Caddyfile                    ║' &&
-        echo '║  Then open: https://localhost:1443                ║' &&
-        echo '╚══════════════════════════════════════════════════╝' &&
-        echo '') &
-        npm run start
-      "
+      - app
+    # Caddy will automatically manage certificates for studio.novelboxai.com
 
 volumes:
   mysql_data:
   redis_data:
   minio_data:
+  caddy_data:
+  caddy_config:

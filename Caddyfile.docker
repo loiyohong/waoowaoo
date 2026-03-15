@@ -1,0 +1,20 @@
+{
+    # Docker 内部 TLS 配置（自签名，用于内网/测试）
+    local_certs
+}
+
+# HTTPS 反向代理（在 Docker 容器中运行）
+:1443, studio.novelboxai.com:1443 {
+    handle /admin/queues* {
+        reverse_proxy app:3010
+    }
+    handle {
+        reverse_proxy app:3000
+    }
+    tls internal
+}
+
+# HTTP 备用
+:80 {
+    reverse_proxy app:3000
+}
