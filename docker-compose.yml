@@ -71,12 +71,12 @@ services:
       MINIO_SECRET_KEY: "minioadmin"
       MINIO_FORCE_PATH_STYLE: "true"
       # 外部访问地址（浏览器实际访问）
-      NEXTAUTH_URL: "https://studio.novelboxai.com"
+      NEXTAUTH_URL: "http://localhost:13000"
       # 容器内自调用地址（服务端 fetch 自己的 API / 文件）
       INTERNAL_APP_URL: "http://127.0.0.1:3000"
       NEXTAUTH_SECRET: "waoowaoo-next-auth-secret-key-2026-v1"
       # SSO Bridge
-      SSO_SHARED_SECRET: "novelbox-waoowaoo-shared-secret-2026-v1"
+      SSO_SHARED_SECRET: "E80637Pvc7zFZBQqP7tcyfNGSi5TT-3LyoVhO9yzrvupr5DwZSQAgSWhceGyKvUl"
       # 内部密钥
       CRON_SECRET: "waoowaoo-docker-cron-secret"
       INTERNAL_TASK_TOKEN: "waoowaoo-docker-task-token"
